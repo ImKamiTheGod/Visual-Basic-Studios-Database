@@ -1,0 +1,76 @@
+Imports System.Data.SqlClient
+
+Public Class MainForm
+    Dim connectionString As String = "Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\CustomerDB.mdf;Integrated Security=True"
+    Dim sqlConnection As New SqlConnection(connectionString)
+    Dim sqlCommand As New SqlCommand()
+    Dim sqlAdapter As New SqlDataAdapter()
+    Dim customerDataSet As New CustomerDBDataSet()
+
+    Private Sub MainForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        ' Load data into the DataGridView
+        sqlAdapter.SelectCommand = New SqlCommand("SELECT * FROM Customers", sqlConnection)
+        sqlAdapter.Fill(customerDataSet.Customers)
+        DataGridView1.DataSource = customerDataSet.Customers
+    End Sub
+
+    Private Sub btnLogin_Click(sender As Object, e As EventArgs) Handles btnLogin.Click
+        ' Perform login validation
+        If ValidateLogin(txtUsername.Text, txtPassword.Text) Then
+            ' If login is successful, enable customer-related controls
+            EnableCustomerControls(True)
+        Else
+            MessageBox.Show("Invalid login credentials.", "Login Failed", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End If
+    End Sub
+
+    Private Sub btnAdd_Click(sender As Object, e As EventArgs) Handles btnAdd.Click
+        ' Perform data validation before adding a new customer
+        If ValidateCustomerInput() Then
+            ' Add a new customer to the database
+            Dim row As DataRow = customerDataSet.Customers.NewRow()
+            row("Username") = txtUsername.Text
+            row("Password") = txtPassword.Text
+            row("Name") = txtName.Text
+            row("Email") = txtEmail.Text
+            customerDataSet.Customers.Rows.Add(row)
+
+            ' Update the database
+            sqlAdapter.Update(customerDataSet.Customers)
+
+            ' Refresh the DataGridView
+            customerDataSet.Customers.Clear()
+            sqlAdapter.Fill(customerDataSet.Customers)
+        End If
+    End Sub
+
+    ' Implement other data operation methods (Update, Delete) similarly
+
+    Private Function ValidateLogin(username As String, password As String) As Boolean
+        ' Implement your login validation logic here
+        ' For simplicity, this example assumes a hardcoded username and password
+        Return (username = "admin" AndAlso password = "password")
+    End Function
+
+    Private Function ValidateCustomerInput() As Boolean
+        ' Implement your customer input validation logic here
+        ' For simplicity, this example assumes all fields are required
+        If String.IsNullOrWhiteSpace(txtName.Text) OrElse
+           String.IsNullOrWhiteSpace(txtEmail.Text) Then
+            MessageBox.Show("Name and Email are required.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            Return False
+        End If
+
+        ' Add more validation rules as needed
+
+        Return True
+    End Function
+
+    Private Sub EnableCustomerControls(enable As Boolean)
+        ' Enable or disable controls related to customer data based on the login status
+        btnAdd.Enabled = enable
+        btnUpdate.Enabled = enable
+        btnDelete.Enabled = enable
+        ' Add other controls as needed
+    End Sub
+End Class
